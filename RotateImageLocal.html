@@ -30,7 +30,7 @@
 				let canvas = document.getElementById('canvasa');
 				const angleDec = document.getElementById('angle').value;
 				let ctx = canvas.getContext('2d');
-				var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
 				imgData = rotate(imgData,angleDec);
 				
@@ -146,7 +146,7 @@
 	<body onload="loadImg()">
 		<canvas id="canvasa" width=100 height=100 style="float:left"></canvas>
 		<div id="color">
-		<form id="uploadForm" action="fileupload" method="post" enctype="multipart/form-data">
+		<form id="uploadForm" action="fileuploadlocal" method="post" enctype="multipart/form-data">
 		  <input type="file" name="filetoupload" onchange="document.getElementById('uploadForm').submit()"><br>
 		  <input type="number" id="angle" min="0" max="360"/>
 		  <input type="button" value="Rotate" onClick='rotateImg()'/>
