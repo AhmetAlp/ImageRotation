@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
+    "test": "mocha",
     "start": "node server.js"
   },
   "author": "Ahmet Alp",
@@ -12,9 +13,12 @@
   "dependencies": {
     "body-parser": "^1.19.0",
     "canvas": "^2.6.0",
+    "compression": "^1.7.4",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "formidable": "^1.2.1",
+    "jsdom": "^15.2.0",
+    "mocha": "^6.2.2",
     "morgan": "^1.9.1",
     "nodemon": "^1.19.4"
   }
