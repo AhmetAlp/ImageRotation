@@ -9,7 +9,7 @@ const rotator = require('../Rotator');
 
 const angle45 = 45 * Math.PI / 180;
 
-describe('Basic Mocha String Test', function () {
+describe('Rotation Task Test', function () {
  it('should return width=10 height=5', function () {		
 		const width = 10;
 		const height = 5;
