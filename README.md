@@ -42,6 +42,10 @@ $ npm run test
   * Local HTML script rotation
   * Node.js call rotation
   * Pure Javascript rotate algorithm without using native API/third party API
+
+## Presentation
+
+Detail presentation is in Rotation_Task.pdf file.
   
 ## References
 
