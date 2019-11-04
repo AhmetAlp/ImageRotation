@@ -1,9 +1,14 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<title>Rotate Image</title>
 		<script>
 
 			var img = new Image();
+			var maxWidth;
+			var maxHeight;			
+			var orjImageData;
+			var totalAngle=0;
 
 			const loadImg = () => {
 				/*
@@ -15,27 +20,39 @@
 //				img.crossOrigin = "Anonymous";
 				img.onload = function() {
 				  if (img.src!=='') {
+				  	const angle45 = 45 * Math.PI / 180;
+					maxWidth = Math.ceil(img.width * Math.cos(angle45) + img.height * Math.sin(angle45))+4;
+					maxHeight = Math.ceil(img.width * Math.sin(angle45) + img.height * Math.cos(angle45))+4;				  
 					canvas.width = img.width;
 					canvas.height = img.height;
 				  }
  				  ctx.drawImage(img, 0, 0);
+				  orjImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 				  img.style.display = 'none';
 				};
+				document.getElementById("rotateForm").onsubmit = function(e) {
+					e.preventDefault();
+				}				
 			}
 			const rotateImg = () => {
 				/*
 				* Rotate the image according to angle inbox degree
 				*/
 				let canvas = document.getElementById('canvasa');
-				const angleDec = document.getElementById('angle').value;
+				const angleDecField = document.getElementById('angle');
+				const angleDec = parseInt(angleDecField.value);
+				if (!angleDecField.checkValidity()) {
+					return;
+				}
 				let ctx = canvas.getContext('2d');
-				var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				//var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				totalAngle = (totalAngle + angleDec)%360;
 
-				let data = imgData.data;
+				//let data = imgData.data;
 				const angle = angleDec * Math.PI / 180;
 				
-				let width = imgData.width;
-				let height = imgData.height;
+				let width = orjImageData.width;
+				let height = orjImageData.height;
 				let cData;
 				let newWidth = width;
 				let newHeight = height;
@@ -44,47 +61,52 @@
 				* Calculate the Size of a Rotated Image
 				* For 180 and 360 degrees, size is same
 				* For 90 and 270 degrees, width and height are reversed
-				* For <90 degrees, Use new-width=w x cos@ + h x sin@, new-height=w x sin@ + h x cos@
-				* For >90 degrees, Use new-width=h x cos@ + w x sin@, new-height=h x sin@ + w x cos@
+				* For acute degrees, Use new-width=w x cos@ + h x sin@, new-height=w x sin@ + h x cos@
+				* For obtuse degrees, Use new-width=h x cos@ + w x sin@, new-height=h x sin@ + w x cos@
 				* Reference: https://iiif.io/api/annex/notes/rotation/
 				*/				
-				if (angleDec%180===0) {
+				if (totalAngle%180===0) {
 					cData = new Uint8ClampedArray(width*height*4);
-				}else if (angleDec%90===0) {
+				}else if (totalAngle%90===0) {
 					newWidth=height;
 					newHeight=width;
-					cData = new Uint8ClampedArray(newWidth*newHeight*4);
-				}else if (angleDec<90) {
-					newWidth = Math.ceil(width * Math.cos(angle) + height * Math.sin(angle))+4;
-					newHeight = Math.ceil(width * Math.sin(angle) + height * Math.cos(angle))+4;
-					cData = new Uint8ClampedArray(newWidth*newHeight*4);
-				} else if (angleDec%360>90) {
-					const rAngle=(angleDec%360-90) * Math.PI / 180;
-					newWidth = Math.ceil(height * Math.cos(angle) + width * Math.sin(angle))+4;
-					newHeight = Math.ceil(height * Math.sin(angle) + width * Math.cos(angle))+4;
-					cData = new Uint8ClampedArray(newWidth*newHeight*4);
+				}else if (totalAngle%180<90) {
+					const dAngle = totalAngle%180 * Math.PI / 180;
+					newWidth = Math.ceil(width * Math.cos(dAngle) + height * Math.sin(dAngle))+4;
+					newHeight = Math.ceil(width * Math.sin(dAngle) + height * Math.cos(dAngle))+4;
+				} else if (totalAngle%180>90) {
+					const rAngle=(totalAngle%180-90) * Math.PI / 180;
+					newWidth = Math.ceil(height * Math.cos(rAngle) + width * Math.sin(rAngle))+4;
+					newHeight = Math.ceil(height * Math.sin(rAngle) + width * Math.cos(rAngle))+4;
 				}
+				if (newWidth>maxWidth && newHeight>maxHeight) {
+					newWidth = maxHeight;
+					newHeight = maxHeight;
+				}
+				if (totalAngle%180!==0) {
+					cData = new Uint8ClampedArray(newWidth*newHeight*4);
+				}				
 				/*
 				*To rotate, POST call from server(In this example node.js server)
 				*/
 				fetch("/rotate",{
-					json: {limit: '50mb', extended: true},
-					urlencoded: {limit: '50mb', extended: true},
+					json: {limit: '10mb', extended: true},
+					urlencoded: {limit: '10mb', extended: true},
 					headers: {
 					  'Accept': 'application/json',
-					  'Content-Type': 'application/json'
+					  'Content-Type': 'application/json',
+					  'Accept-Encoding':'gzip'
 					},
 					method: "POST",
 					body: JSON.stringify({
-					  imagedata: imgData.data,
-					  width:imgData.width,
-					  height:imgData.height,
-					  angle: angleDec
+					  imagedata: orjImageData.data,
+					  width:width,
+					  height:height,
+					  angle: totalAngle
 					})
 				})
-				.then(function(res){
-					return res.json(); 
-				}).then(function(obj) {
+				.then(response => response.json())
+				.then(function(obj) {
 					//Get rotated imagedata response and redraw the canvas
 					imgData = new ImageData(newWidth,newHeight);
 					for (let i = 0; i < newWidth*newHeight*4; i++) {
@@ -101,12 +123,12 @@
 	</head>
 	<body onload="loadImg()">
 		<canvas id="canvasa" width=100 height=100 style="float:left"></canvas>
-		<div id="color">
 		<form id="uploadForm" action="fileupload" method="post" enctype="multipart/form-data">
 		  <input type="file" name="filetoupload" onchange="document.getElementById('uploadForm').submit()"><br>
-		  <input type="number" id="angle" min="0" max="360"/>
-		  <input type="button" value="Rotate" onClick='rotateImg()'/>
 		</form>
-		</div>
+		<form id="rotateForm">
+		  <input type="number" id="angle" min="0" max="360" required/>
+		  <input type="submit" value="Rotate" onClick='rotateImg()'/>
+		</form>
 	</body>
 </html>

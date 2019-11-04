@@ -3,6 +3,8 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const formidable = require('formidable');
 const fs = require('fs');
+//const compression = require('compression');
+const zlib = require('zlib')
 const {ImageData} = require('canvas'); //Only to use ImageData structure
 const rotator = require('./Rotator');
 
@@ -10,6 +12,9 @@ const app = express();
 const router = express.Router();
 
 const byteLimit=1024*1024*1024*30;
+const angle45 = 45 * Math.PI / 180;
+var maxWidth = 0;
+var maxHeight = 0;
 
 app.use(bodyParser.json({limit: byteLimit, extended:true, type:'application/json'}));
 app.use(bodyParser.urlencoded({limit:byteLimit, extended:true, type:'application/x-www-form-urlencoded'}));
@@ -36,8 +41,18 @@ router.post('/rotate',function(req,res){
 	}
 	
 	let imagex = new ImageData(imageData,width,height);
-	const rotator1=new rotator();
+	if (maxWidth===0) {
+		maxWidth = Math.ceil(imagex.width * Math.cos(angle45) + imagex.height * Math.sin(angle45))+4;
+	}
+	if (maxHeight===0) {
+		maxHeight = Math.ceil(imagex.width * Math.sin(angle45) + imagex.height * Math.cos(angle45))+4;
+	}
+	const rotator1=new rotator(maxWidth,maxHeight);
+	let startTime = new Date();
 	imageData = rotator1.rotate(imagex,angleDec);
+	let endTime = new Date();
+	console.log("Process time="+ (endTime - startTime) +" ms");
+
 	res.send(imageData);
 });
 

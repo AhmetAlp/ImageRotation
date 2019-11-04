@@ -2,7 +2,9 @@ const {ImageData} = require('canvas'); //Only to use ImageData structure
 
 class Rotator {
 	//No need to any class fields
-	constructor() {
+	constructor(maxWidth,maxHeight) {
+		this.maxWidth = maxWidth;
+		this.maxHeight = maxHeight;
 	}
 	rotate(imagex,angleDec) {
 		/*
@@ -16,7 +18,6 @@ class Rotator {
 		* But calculation for different degrees is a risk
 		*/
 
-		const startTime = new Date();
 		const data = imagex.data;
 		const angle = angleDec * Math.PI / 180;
 		
@@ -30,8 +31,8 @@ class Rotator {
 		* Calculate the Size of a Rotated Image
 		* For 180 and 360 degrees, size is same
 		* For 90 and 270 degrees, width and height are reversed
-		* For <90 degrees, Use new-width=w x cos@ + h x sin@, new-height=w x sin@ + h x cos@
-		* For >90 degrees, Use new-width=h x cos@ + w x sin@, new-height=h x sin@ + w x cos@
+		* For acute degrees, Use new-width=w x cos@ + h x sin@, new-height=w x sin@ + h x cos@
+		* For obtuse degrees, Use new-width=h x cos@ + w x sin@, new-height=h x sin@ + w x cos@
 		* Reference: https://iiif.io/api/annex/notes/rotation/
 		*/		
 		if (angleDec%180===0) {
@@ -39,17 +40,22 @@ class Rotator {
 		}else if (angleDec%90===0) {
 			newWidth=height;
 			newHeight=width;
-			cData = new Uint8ClampedArray(newWidth*newHeight*4);
-		}else if (angleDec<90) {
-			newWidth = Math.ceil(width * Math.cos(angle) + height * Math.sin(angle))+4;
-			newHeight = Math.ceil(width * Math.sin(angle) + height * Math.cos(angle))+4;
-			cData = new Uint8ClampedArray(newWidth*newHeight*4);
-		} else if (angleDec%360>90) {
-			const rAngle=(angleDec%360-90) * Math.PI / 180;
-			newWidth = Math.ceil(height * Math.cos(angle) + width * Math.sin(angle))+4;
-			newHeight = Math.ceil(height * Math.sin(angle) + width * Math.cos(angle))+4;
-			cData = new Uint8ClampedArray(newWidth*newHeight*4);
+		}else if (angleDec%180<90) {
+			const dAngle = angleDec%180 * Math.PI / 180;
+			newWidth = Math.ceil(width * Math.cos(dAngle) + height * Math.sin(dAngle))+4;
+			newHeight = Math.ceil(width * Math.sin(dAngle) + height * Math.cos(dAngle))+4;
+		} else if (angleDec%180>90) {
+			const rAngle=(angleDec%180-90) * Math.PI / 180;
+			newWidth = Math.ceil(height * Math.cos(rAngle) + width * Math.sin(rAngle))+4;
+			newHeight = Math.ceil(height * Math.sin(rAngle) + width * Math.cos(rAngle))+4;
 		}
+		if (newWidth>this.maxWidth && newHeight>this.maxHeight) {
+			newWidth = this.maxHeight;
+			newHeight = this.maxHeight;
+		}
+		if (angleDec%180!==0) {
+			cData = new Uint8ClampedArray(newWidth*newHeight*4);
+		}		
 		let nx, ny; //new x and y
 		let x = 0;
 		let y = 0; //If you want image canvas different location change x and y
@@ -97,8 +103,6 @@ class Rotator {
 		
 		//Write destination temporary array to original ImageData
 		imagex= new ImageData(cData,newWidth, newHeight);
-		let endTime = new Date();
-		console.log("Process time="+ (endTime - startTime) +" ms");
 		return imagex;
 	}
 }
