@@ -1,4 +1,4 @@
-# ImageRotation
+# Image Rotation
 Image Rotation Algorithm in Javascript &amp; Nodejs
 
 ## Installation
